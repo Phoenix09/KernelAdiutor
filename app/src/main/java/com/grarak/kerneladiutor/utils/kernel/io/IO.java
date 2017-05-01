@@ -27,6 +27,10 @@ import com.grarak.kerneladiutor.utils.root.Control;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.io.File;
+import java.io.IOException;
 
 /**
  * Created by willi on 27.06.16.
@@ -45,10 +49,29 @@ public abstract class IO {
     private static final List<String> sExternal = new ArrayList<>();
 
     static {
-        sInternal.add("/sys/block/mmcblk0/queue");
+        boolean hasUfs = false;
+        try {
+            File f = new File("/sys/block/sda");
+            if (f.exists()) {
+                String realPath = f.getCanonicalPath();
+                Pattern r = Pattern.compile(".*\\.ufs\\/.*");
+                Matcher m = r.matcher(realPath);
+                if (m.matches()) {
+                    sInternal.add("/sys/block/sda/queue");
+                    hasUfs = true;
+                }
+            }
+        } catch (IOException e) { }
+
+        if (!hasUfs) {
+            sInternal.add("/sys/block/mmcblk0/queue");
+        }
         sInternal.add("/sys/block/dm-0/queue");
         sInternal.add("/sys/block/sda/queue");
 
+        if (hasUfs) {
+            sExternal.add("/sys/block/mmcblk0/queue");
+        }
         sExternal.add("/sys/block/mmcblk1/queue");
     }
 
